@@ -105,8 +105,9 @@ io.on('connection', socket => {
     const sz   = room.np <= 2 ? 7 : 6;
     const hands = Array.from({ length: room.np }, () => deck.splice(0, sz));
 
-    room.started   = true;
-    room.gameState = { deck, hands };
+    room.started      = true;
+    room.currentTurn  = 0;
+    room.gameState    = { deck, hands, chips: {}, scores: Array(room.np).fill(0) };
 
     // كل لاعب يستقبل أوراقه فقط + عدد الـ deck
     room.players.forEach((pid, index) => {
@@ -122,34 +123,46 @@ io.on('connection', socket => {
 
   // ── مزامنة حركة وتحديث الأوراق أونلاين ─────────────────────────────────────────
   socket.on('game-sync', data => {
-  const found = getRoomBySocket(socket.id);
-  if (!found) return;
+    const found = getRoomBySocket(socket.id);
+    if (!found) return;
+    const { code, room } = found;
+    if (!room.gameState) return;
 
-  const room = found.room;
+    // التحقق أن المرسِل هو فعلاً صاحب الدور الحالي
+    const senderIdx = room.players.indexOf(socket.id);
+    if (senderIdx !== room.currentTurn) return; // تجاهل أي إرسال خارج الدور
 
-  // تحديث الأوراق والـ deck في السيرفر لتبقى متزامنة
-  if (data.hands && room.gameState) room.gameState.hands = data.hands;
-  if (data.deck && room.gameState) room.gameState.deck = data.deck;
+    const gs = room.gameState;
 
-  // إدارة الدور: الانتقال إلى اللاعب التالي في كل مرة يحدث تزامن
-  room.currentTurn = (room.currentTurn + 1) % room.players.length;
-  data.currentTurn = room.currentTurn;
+    // تحديث اللوحة (chips) والسكور على السيرفر
+    if (data.chips  !== undefined) gs.chips  = data.chips;
+    if (data.scores !== undefined) gs.scores = data.scores;
 
-  // بث التحديثات والدور الجديد لجميع اللاعبين في الغرفة
-  io.to(found.code).emit('game-sync', data);
-});
+    // السيرفر هو من يسحب الورقة ويضيفها لليد
+    let newCard = null;
+    if (gs.deck.length > 0) {
+      newCard = gs.deck.pop();
+      gs.hands[senderIdx].push(newCard);
+    }
 
-  // ── طلب سحب ورقة جديدة ──────────────────────────────────
-  socket.on('draw-card', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || !room.gameState) return;
-    const { deck, hands } = room.gameState;
-    const pIdx = room.players.indexOf(socket.id);
-    if (pIdx === -1) return;
-    if (deck.length === 0) { socket.emit('no-cards'); return; }
-    const card = deck.pop();
-    hands[pIdx].push(card);
-    socket.emit('card-drawn', { card, deckCount: deck.length });
+    // الانتقال للدور التالي بعد تسجيل الحركة
+    room.currentTurn = (room.currentTurn + 1) % room.np;
+
+    // بث التحديث لجميع اللاعبين
+    io.to(code).emit('game-sync', {
+      cp:           room.currentTurn,
+      chips:        gs.chips,
+      scores:       gs.scores,
+      deckCount:    gs.deck.length,
+      lastCard:     data.lastCard,
+      cardType:     data.cardType,
+      history:      data.history,
+      winner:       data.winner,
+      // اللاعب الذي لعب يستقبل ورقته الجديدة عبر هذا الحقل
+      drawnCard:    { forPlayer: senderIdx, card: newCard }
+    });
+
+    console.log(`♟️  [${code}] لاعب ${senderIdx} لعب → دور لاعب ${room.currentTurn}`);
   });
 
   // ── رسالة دردشة سريعة ────────────────────────
