@@ -29,6 +29,23 @@ function getRoomBySocket(sid) {
   return null;
 }
 
+// ── بناء ورق اللعبة (خلط عشوائي) ──────────────────────────
+function buildDeck() {
+  const suits = ['♠','♥','♦','♣'];
+  const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  const deck  = [];
+  for (let i = 0; i < 2; i++)
+    for (const s of suits)
+      for (const r of ranks)
+        deck.push(`${r}${s}`);
+  // Fisher-Yates shuffle
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
 // ── اتصال ──────────────────────────────────────────────────
 io.on('connection', socket => {
   console.log(`✅ [${socket.id}] متصل`);
@@ -79,15 +96,26 @@ io.on('connection', socket => {
   });
 
   // ── بدء اللعبة (المضيف فقط) ─────────────────────────────
-  socket.on('start-game', ({ code, deck, hands, np }) => {
+  socket.on('start-game', ({ code }) => {
     const room = rooms.get(code);
     if (!room || room.host !== socket.id) return;
 
-    room.started  = true;
+    // السيرفر يبني ويخلط الورق
+    const deck = buildDeck();
+    const sz   = room.np <= 2 ? 7 : 6;
+    const hands = Array.from({ length: room.np }, () => deck.splice(0, sz));
+
+    room.started   = true;
     room.gameState = { deck, hands };
 
+    // كل لاعب يستقبل أوراقه فقط + عدد الـ deck
     room.players.forEach((pid, index) => {
-      io.to(pid).emit('game-init', { index, np, deck, hands });
+      io.to(pid).emit('game-init', {
+        index,
+        np: room.np,
+        hand: hands[index],
+        deckCount: deck.length
+      });
     });
     console.log(`🎮 اللعبة بدأت في [${code}]`);
   });
@@ -102,6 +130,19 @@ io.on('connection', socket => {
     if (data.deck && found.room.gameState)  found.room.gameState.deck = data.deck;
 
     socket.to(found.code).emit('game-sync', data);
+  });
+
+  // ── طلب سحب ورقة جديدة ──────────────────────────────────
+  socket.on('draw-card', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || !room.gameState) return;
+    const { deck, hands } = room.gameState;
+    const pIdx = room.players.indexOf(socket.id);
+    if (pIdx === -1) return;
+    if (deck.length === 0) { socket.emit('no-cards'); return; }
+    const card = deck.pop();
+    hands[pIdx].push(card);
+    socket.emit('card-drawn', { card, deckCount: deck.length });
   });
 
   // ── رسالة دردشة سريعة ────────────────────────
@@ -154,4 +195,3 @@ server.listen(PORT, () => {
   console.log(`🌐  http://localhost:${PORT}`);
   console.log('═'.repeat(50));
 });
-module.exports = app;

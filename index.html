@@ -203,8 +203,12 @@ function connectSocket(){
     setStatus('❌ '+msg,'err');
   });
 
-  socket.on('game-init', ({index, np:gameNp, deck:d, hands:h})=>{
-    myPI=index; np=gameNp; deck=d; hands=h;
+  socket.on('game-init', ({index, np:gameNp, hand, deckCount})=>{
+    myPI=index; np=gameNp;
+    // السيرفر يعطي كل لاعب أوراقه فقط
+    hands = Array.from({length:np}, ()=>[]);
+    hands[myPI] = hand;
+    deck = Array(deckCount).fill('?'); // placeholder لعدد الأوراق المتبقية
     setColorMap();
     beginGame();
   });
@@ -215,13 +219,19 @@ function connectSocket(){
     scores  = data.scores;
     lastPlayedCard  = data.lastCard;
     lastPlayedType  = data.cardType;
-    if(data.hands)  hands = data.hands;
-    if(data.deck)   deck = data.deck;
+    // لا نستقبل hands كاملة — كل لاعب عنده أوراقه من السيرفر مباشرة
+    if(data.deckCount !== undefined) deck = Array(data.deckCount).fill('?');
     if(data.history) playedCardsHistory = data.history;
     renderBoard(); renderHand(); updateHdr();
     updateStatusMsg(); updateLastCardDisplay();
     rebuildSidePanels();
     if(data.winner!==undefined) showWin(data.winner);
+  });
+
+  socket.on('card-drawn', ({card, deckCount})=>{
+    hands[myPI].push(card);
+    deck = Array(deckCount).fill('?');
+    renderHand();
   });
 
   socket.on('player-disconnected', ({playerIndex, wasHost})=>{
@@ -257,17 +267,11 @@ function joinRoom(){
 
 function startOnlineGame(){
   if(!amHost) return;
-  deck=mkDeck(); chips={}; scores=Array(np).fill(0); cp=0;
+  chips={}; scores=Array(np).fill(0); cp=0;
   hands=Array.from({length:np},()=>[]);
   setColorMap();
-  const sz=np<=2?7:6;
-  for(let i=0;i<sz;i++) for(let p=0;p<np;p++) hands[p].push(deck.pop());
-  socket.emit('start-game',{
-    code:myRoomCode, np,
-    deck:[...deck],
-    hands:JSON.parse(JSON.stringify(hands))
-  });
-  myPI=0; beginGame();
+  // السيرفر هو من يوزع الأوراق
+  socket.emit('start-game', { code: myRoomCode });
 }
 
 function syncOnline(winner){
@@ -276,8 +280,7 @@ function syncOnline(winner){
     chips, cp, scores,
     lastCard:lastPlayedCard, cardType:lastPlayedType,
     history:playedCardsHistory,
-    hands: JSON.parse(JSON.stringify(hands)),
-    deck: [...deck],
+    deckCount: deck.length,
     winner
   });
   renderBoard(); renderHand(); updateHdr();
@@ -467,7 +470,9 @@ function burnCard(idx){
   lastPlayedCard = card; lastPlayedType = 'burned';
   addToHistory(myPI, card, 'burned');
   hands[myPI].splice(idx, 1);
-  if(deck.length) hands[myPI].push(deck.pop());
+  // أونلاين: اطلب ورقة جديدة من السيرفر
+  if(isOnline) socket.emit('draw-card', {code: myRoomCode});
+  else { if(deck.length) hands[myPI].push(deck.pop()); }
   sc = null; cp = (cp + 1) % np;
   if(isOnline) syncOnline();
   else{renderBoard();renderHand();updateHdr();updateStatusMsg();updateLastCardDisplay();scheduleBot();}
@@ -491,7 +496,9 @@ function onCell(r,c){
   lastPlayedCard=card; lastPlayedType=moveType;
   addToHistory(myPI,card,moveType);
   hands[myPI].splice(sc,1);
-  if(deck.length) hands[myPI].push(deck.pop());
+  // أونلاين: اطلب ورقة جديدة من السيرفر
+  if(isOnline) socket.emit('draw-card', {code: myRoomCode});
+  else { if(deck.length) hands[myPI].push(deck.pop()); }
   sc=null;
   const seq=checkSeq(myPI);
   if(seq){scores[myPI]++;seq.forEach(k=>chips[k+'-s']=true);}
