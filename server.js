@@ -15,9 +15,9 @@ const io     = new Server(server, {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.get('/', (req, res) =>
-  res.sendFile(path.join(__dirname, 'public', 'index.html'))
-);
+app.get('/', (req, res) => {
+  res.status(200).send('🎮 SEQUENCE GAME SERVER is running successfully on Railway!');
+});
 
 // ── غرف نشطة ──────────────────────────────────────────────
 const rooms = new Map();
@@ -187,11 +187,13 @@ setInterval(() => {
 
 // ── تشغيل ───────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+const HOST = '0.0.0.0';
+
+server.listen(PORT, HOST, () => {
   console.log('═'.repeat(50));
   console.log('🃏  SEQUENCE GAME SERVER  v3.1');
   console.log('═'.repeat(50));
-  console.log(`✅  يعمل على المنفذ ${PORT}`);
-  console.log(`🌐  http://localhost:${PORT}`);
+  console.log(`✅  يعمل على ${HOST}:${PORT}`);
+  console.log('🚀 Railway Deployment Ready');
   console.log('═'.repeat(50));
 });
