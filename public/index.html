@@ -222,17 +222,14 @@ function connectSocket(){
     lastPlayedType  = data.cardType;
     if(data.deckCount !== undefined) deck = Array(data.deckCount).fill('?');
     if(data.history) playedCardsHistory = data.history;
+    // إضافة الورقة الجديدة لليد إذا كانت موجهة لهذا اللاعب
+    if(data.drawnCard && data.drawnCard.forPlayer === myPI && data.drawnCard.card) {
+      hands[myPI].push(data.drawnCard.card);
+    }
     renderBoard(); renderHand(); updateHdr();
     updateStatusMsg(); updateLastCardDisplay();
     rebuildSidePanels();
     if(data.winner!==undefined) showWin(data.winner);
-  });
-
-  // إضافة كرت جديد ليد اللاعب عند السحب من السيرفر
-  socket.on('card-drawn', ({card, deckCount})=>{
-    hands[myPI].push(card);
-    deck = Array(deckCount).fill('?');
-    renderHand();
   });
 
   // تفعيل شاشة التنبيه الحتمية إذا انسحب أو فصل نت أي لاعب وسط الجيم
@@ -279,16 +276,16 @@ function startOnlineGame(){
 // إرسال البيانات المحدثة للسيرفر بعد حركتك ليقوم السيرفر ببثها لباقي اللاعبين أونلاين
 function syncOnline(winner){
   socket.emit('game-sync',{
-    code:myRoomCode,
-    chips, cp, scores,
-    lastCard:lastPlayedCard, cardType:lastPlayedType,
-    history:playedCardsHistory,
-    deckCount: deck.length,
+    code:     myRoomCode,
+    chips,
+    scores,
+    lastCard:  lastPlayedCard,
+    cardType:  lastPlayedType,
+    history:   playedCardsHistory,
     winner
+    // لا نرسل cp هنا: السيرفر هو من يحسب الدور التالي
   });
-  renderBoard(); renderHand(); updateHdr();
-  updateStatusMsg(); updateLastCardDisplay();
-  if(winner!==undefined) showWin(winner);
+  // لا نستدعي render هنا: سنستقبل game-sync من السيرفر فيعمل render تلقائياً
 }
 
 // ==================================================
@@ -491,15 +488,8 @@ function burnCard(idx){
   hands[myPI].splice(idx, 1); // حذف الكرت من يد اللاعب
   
   if(isOnline) {
-    if(deck.length) hands[myPI].push(deck.pop()); 
     sc = null;
-    socket.emit('game-sync', { // مزامنة حرق الكرت مع السيرفر
-      hands: hands,
-      deck: deck,
-      lastPlayedCard: lastPlayedCard,
-      lastPlayedType: lastPlayedType,
-      bi: myPI
-    });
+    syncOnline(undefined); // السيرفر يسحب الورقة ويبث للجميع
   } else { // الحرق محلياً ضد البوت
     if(deck.length) hands[myPI].push(deck.pop());
     sc = null; 
@@ -539,21 +529,10 @@ function onCell(r,c){
   hands[myPI].splice(sc,1); // مسح الورقة الملعوبة من اليد
   
   if(isOnline) { // تنفيذ وإرسال الحركة أونلاين
-    socket.emit('draw-card', {code: myRoomCode}); // سحب كرت جديد فوري
     sc=null;
-    
     const seq=checkSeq(myPI); // التحقق من حدوث سيكوينس فوز
     if(seq){scores[myPI]++;seq.forEach(k=>chips[k+'-s']=true);}
-    
-    socket.emit('game-sync', { // رفع تفاصيل حركتك المحدثة للسيرفر
-      hands: hands,
-      deck: deck,
-      chips: chips, 
-      lastPlayedCard: lastPlayedCard,
-      lastPlayedType: lastPlayedType,
-      bi: myPI,
-      winnerIndex: seq ? myPI : undefined 
-    });
+    syncOnline(seq ? myPI : undefined); // السيرفر يسحب الورقة ويبث للجميع
     
   } else { // تنفيذ الحركة محلياً ضد الكمبيوتر
     if(deck.length) hands[myPI].push(deck.pop());
