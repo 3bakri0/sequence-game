@@ -154,3 +154,4 @@ server.listen(PORT, () => {
   console.log(`🌐  http://localhost:${PORT}`);
   console.log('═'.repeat(50));
 });
+module.exports = app;
