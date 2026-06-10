@@ -122,15 +122,22 @@ io.on('connection', socket => {
 
   // ── مزامنة حركة وتحديث الأوراق أونلاين ─────────────────────────────────────────
   socket.on('game-sync', data => {
-    const found = getRoomBySocket(socket.id);
-    if (!found) return;
+  const found = getRoomBySocket(socket.id);
+  if (!found) return;
 
-    // تحديث الأوراق والـ deck في السيرفر لتبقى متزامنة عند السحب والحرق
-    if (data.hands && found.room.gameState) found.room.gameState.hands = data.hands;
-    if (data.deck && found.room.gameState)  found.room.gameState.deck = data.deck;
+  const room = found.room;
 
-    socket.to(found.code).emit('game-sync', data);
-  });
+  // تحديث الأوراق والـ deck في السيرفر لتبقى متزامنة
+  if (data.hands && room.gameState) room.gameState.hands = data.hands;
+  if (data.deck && room.gameState) room.gameState.deck = data.deck;
+
+  // إدارة الدور: الانتقال إلى اللاعب التالي في كل مرة يحدث تزامن
+  room.currentTurn = (room.currentTurn + 1) % room.players.length;
+  data.currentTurn = room.currentTurn;
+
+  // بث التحديثات والدور الجديد لجميع اللاعبين في الغرفة
+  io.to(found.code).emit('game-sync', data);
+});
 
   // ── طلب سحب ورقة جديدة ──────────────────────────────────
   socket.on('draw-card', ({ code }) => {

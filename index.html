@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🃏 Sequence – لعبة السيكوينس</title>
+<link rel="stylesheet" href="game1.css">
+</head>
+<body>
+
+<div id="statusBar"></div> <div id="disconnectOverlay"> <h2>⚠️ انقطع الاتصال</h2>
+  <p id="disconnectMsg">لاعب قطع الاتصال. انتهت اللعبة.</p>
+  <button class="btn bp" onclick="location.reload()">العودة للقائمة</button>
+</div>
+
+
+<div id="menu" class="screen active">
+  <div class="logo">🃏 SEQUENCE</div>
+  <div class="subtitle">لعبة السيكوينس العربية</div>
+  <div class="cprev"> <div class="pc r">A♥</div><div class="pc">K♠</div><div class="pc r">Q♦</div><div class="pc">J♣</div>
+  </div>
+
+  <div class="msec">
+    <h3>🌐 أونلاين</h3> <div class="brow">
+      <button class="btn bo"   onclick="goLobby(2)">1 ضد 1</button>
+      <button class="btn bp"   onclick="goLobby(4)">🔥 2 ضد 2 (فرق)</button>
+      <button class="btn bg6" onclick="goLobby(6)">⚡ 3 فرق (6 لاعبين)</button>
+    </div>
+  </div>
+
+  <div class="msec">
+    <h3>🤖 محلي ضد الكمبيوتر</h3> <div class="brow">
+      <button class="btn bs" onclick="startLocal('bot')">🤖 ضد الكمبيوتر</button>
+      <button class="btn bs" onclick="startLocal('4p')">🤖 2 فرق</button>
+      <button class="btn bs" onclick="startLocal('6p')">🤖 3 فرق</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="lobby" class="screen">
+  <h2>🌐 ردهة الانتظار</h2>
+  <div class="lbox">
+    <h3>📋 شارك الكود مع أصدقائك</h3>
+    <div class="rcode" id="my-code" onclick="copyCode()" title="انقر للنسخ">••••••</div>
+    <div class="cst w" id="host-st">
+      <div class="pd g"></div>
+      <span id="host-tx">جارِ الاتصال بالسيرفر...</span>
+    </div>
+  </div>
+  <div class="divider">أو انضم لغرفة موجودة</div>
+  <div class="lbox">
+    <input class="ci" id="join-in" type="text" placeholder="أدخل كود الغرفة" maxlength="6"
+           oninput="this.value=this.value.toUpperCase()">
+    <button class="btn bo" onclick="joinRoom()">دخول الغرفة ←</button>
+  </div>
+  <button class="btn bs" style="margin-top:.5rem" onclick="location.reload()">← رجوع</button>
+</div>
+
+
+<div id="game" class="screen">
+  <div class="ghdr">
+    <div class="scores" id="scores-el"></div> <div class="ti"><div class="td" id="tdot"></div><span id="tlbl">دورك</span></div> <button class="xbtn" onclick="location.reload()">✕ خروج</button>
+  </div>
+  <div class="gbody">
+    <div class="played-cards-side left-side">
+      <div class="side-label" id="left-label">🎴 اللاعب 1</div>
+      <div class="played-cards-area" id="played-cards-left"></div>
+    </div>
+    <div class="game-center">
+      <div class="bwrap"><div class="board" id="board"></div></div>
+      <div class="status-row">
+        <div id="smsg">اختر ورقة</div> <div id="lastCardDisplay" class="last-card-box"></div> </div>
+      <div class="ha">
+        <div class="hlbl" id="hlbl">يدك</div>
+        <div class="hand" id="hand"></div> </div>
+    </div>
+    <div class="played-cards-side right-side">
+      <div class="side-label" id="right-label">🎴 لاعب 2</div>
+      <div class="played-cards-area" id="played-cards-right"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mover" id="modal">
+  <div class="modal">
+    <h2 id="mtitle">🏆</h2>
+    <p id="mmsg"></p>
+    <button class="btn bp" onclick="location.reload()">القائمة الرئيسية</button>
+  </div>
+</div>
+<div class="wover" id="wover"><div class="pd g"></div><span>دور الخصم، انتظر...</span></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+'use strict';
+
+// ==================================================
+// 📌 القسم 5: البيانات الثابتة وحالة اللعبة العامة
+// ==================================================
+// المصفوفة الثنائية الأبعاد التي تمثل شكل وتوزيع كروت لوحة السيكوينس (10*10)
+const GB=[
+  ["★","6♦","7♦","8♦","9♦","10♦","Q♦","K♦","A♦","★"],
+  ["5♦","3♥","2♥","2♠","3♠","4♠","5♠","6♠","7♠","A♣"],
+  ["4♦","4♥","K♦","A♦","A♣","K♣","Q♣","10♣","8♠","K♣"],
+  ["3♦","5♥","Q♦","Q♥","10♥","9♥","8♥","9♣","9♠","Q♣"],
+  ["2♦","6♥","10♦","K♥","3♥","2♥","7♥","8♣","10♠","10♣"],
+  ["A♠","7♥","9♦","A♥","4♥","5♥","6♥","7♣","Q♠","9♣"],
+  ["K♠","8♥","8♦","2♣","3♣","4♣","5♣","6♣","K♠","8♣"],
+  ["Q♠","9♥","7♦","6♦","5♦","4♦","3♦","2♦","A♠","7♣"],
+  ["10♠","10♥","Q♥","K♥","A♥","2♣","3♣","4♣","5♣","6♣"],
+  ["★","9♠","8♠","7♠","6♠","5♠","4♠","3♠","2♠","★"]
+];
+// الألوان الخاصة بفيشات اللاعبين الستة كحد أقصى
+const PC=['#52b788','#e63946','#f4a261','#90e0ef','#ffa500','#00ffc8'];
+
+// متغيرات ديناميكية لتخزين حالة اللعبة (الدور، الكروت باليد، أماكن الفيش، السكور)
+let gm='',np=2,deck=[],hands=[],chips={},cp=0,sc=null,scores=[],over=false;
+let myPI=0, isOnline=false;
+let CC=['c0','c1','c2','c3','c4','c5']; // كلاسات الألوان للفيش
+let lastPlayedCard=null, lastPlayedType=null;
+let playedCardsHistory={0:[],1:[],2:[],3:4,4:[],5:[]}; // حفظ آخر كروت ملعوبة لعرضها جانبياً
+let myRoomCode='', socket=null, amHost=false;
+
+// ==================================================
+// 📌 القسم 6: الدوال المساعدة وإدارة الواجهات UTILS
+// ==================================================
+// دالة للتنقل بين شاشات اللعبة بإضافة أو إزالة كلاس active
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// دالة إظهار شريط الإشعارات العلوي وتلوينه حسب الحالة (نجاح، خطأ، انتظار)
+function setStatus(msg, type='w'){
+  const el=document.getElementById('statusBar');
+  el.textContent=msg;
+  el.style.background=type==='ok'?'rgba(0,80,0,.95)':type==='err'?'rgba(120,0,0,.95)':'rgba(0,30,80,.95)';
+  el.classList.add('show');
+  if(type==='ok') setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// دالة لنسخ كود الغرفة إلى الحافظة عند الضغط عليه
+function copyCode(){
+  const c=document.getElementById('my-code').textContent;
+  navigator.clipboard.writeText(c).then(()=>setStatus('✅ تم نسخ الكود: '+c,'ok'));
+}
+
+// دالة لتحديث نصوص وحالة الغرفة داخل اللوبي
+function setLobbyStatus(msg, type='w'){
+  const el=document.getElementById('host-st');
+  el.className='cst '+type;
+  el.innerHTML=`<div class="pd ${type==='ok'?'k':'g'}"></div><span id="host-tx">${msg}</span>`;
+}
+
+// دالة لربط ألوان الفيشات بناءً على نظام الفرق (إذا 4 لاعبين يصبح لاعب 1 و 3 بنفس اللون)
+function setColorMap(){
+  if(np===4)       CC=['c0','c1','c0','c1'];
+  else if(np===6) CC=['c0','c1','c2','c0','c1','c2'];
+  else            CC=['c0','c1','c2','c3','c4','c5'];
+}
+
+// ==================================================
+// 📌 القسم 7: إدارة شبكة الأونلاين SOCKET.IO (ربط أحداث السيرفر للعب الجماعي)
+// ==================================================
+function connectSocket(){
+  if(socket && socket.connected) return;
+  socket = io({ transports:['websocket','polling'] });
+
+  socket.on('connect', ()=>{
+    setStatus('🟢 متصل بالسيرفر','ok');
+    if(myRoomCode && amHost)   socket.emit('create-room',{code:myRoomCode, np});
+  });
+
+  socket.on('disconnect', ()=>setStatus('🔴 انقطع الاتصال بالسيرفر','err'));
+  socket.on('connect_error', ()=>setStatus('⚠️ تعذّر الاتصال بالسيرفر','err'));
+
+  // عند نجاح المضيف (Host) في إنشاء الغرفة بالسيرفر
+  socket.on('room-created', ({code, playerIndex})=>{
+    myPI = playerIndex;
+    setLobbyStatus(`الغرفة جاهزة! في انتظار اللاعبين: 1 / ${np}`, 'ok');
+  });
+
+  // عند نجاح لاعب آخر في الدخول إلى الغرفة عبر الكود
+  socket.on('room-joined', ({code, playerIndex, np:roomNp})=>{
+    myPI = playerIndex; np = roomNp;
+    setLobbyStatus(`✅ انضممت للغرفة ${code} – لاعب رقم ${playerIndex+1}`, 'ok');
+    setStatus(`✅ انضممت للغرفة ${code}`,'ok');
+  });
+
+  socket.on('player-joined', ({playerCount, np:roomNp})=>{
+    setLobbyStatus(`اللاعبون: ${playerCount} / ${roomNp}`, 'ok');
+  });
+
+  // عند اكتمال العدد المطلوب للغرفة، تبدأ المباراة تلقائياً
+  socket.on('all-players-joined', ()=>{
+    setLobbyStatus('✅ اكتمل الفريق! جارِ بدء اللعبة...','ok');
+    setTimeout(startOnlineGame, 800);
+  });
+
+  socket.on('room-error', msg=>{
+    setLobbyStatus('❌ '+msg, 'err');
+    setStatus('❌ '+msg,'err');
+  });
+
+  // استقبال أوراق اليد الأولى الموزعة من السيرفر لكل لاعب بشكل سري
+  socket.on('game-init', ({index, np:gameNp, hand, deckCount})=>{
+    myPI=index; np=gameNp;
+    hands = Array.from({length:np}, ()=>[]);
+    hands[myPI] = hand;
+    deck = Array(deckCount).fill('?'); 
+    setColorMap();
+    beginGame();
+  });
+
+  // أهم حدث: مزامنة اللوحة، الفيش، الدور، وآخر كرت ملعوب عند كل اللاعبين فور حدوث أي حركة
+  socket.on('game-sync', data=>{
+    chips   = data.chips;
+    cp      = data.cp;
+    scores  = data.scores;
+    lastPlayedCard  = data.lastCard;
+    lastPlayedType  = data.cardType;
+    if(data.deckCount !== undefined) deck = Array(data.deckCount).fill('?');
+    if(data.history) playedCardsHistory = data.history;
+    renderBoard(); renderHand(); updateHdr();
+    updateStatusMsg(); updateLastCardDisplay();
+    rebuildSidePanels();
+    if(data.winner!==undefined) showWin(data.winner);
+  });
+
+  // إضافة كرت جديد ليد اللاعب عند السحب من السيرفر
+  socket.on('card-drawn', ({card, deckCount})=>{
+    hands[myPI].push(card);
+    deck = Array(deckCount).fill('?');
+    renderHand();
+  });
+
+  // تفعيل شاشة التنبيه الحتمية إذا انسحب أو فصل نت أي لاعب وسط الجيم
+  socket.on('player-disconnected', ({playerIndex, wasHost})=>{
+    if(over) return;
+    const msg = wasHost ? 'المضيف قطع الاتصال. انتهت اللعبة.' : `لاعب ${playerIndex+1} قطع الاتصال.`;
+    document.getElementById('disconnectMsg').textContent = msg;
+    document.getElementById('disconnectOverlay').classList.add('show');
+    over=true;
+  });
+}
+
+// دالة تشغيل وضع الأونلاين كمضيف وغرفة جديدة
+function goLobby(numPlayers){
+  gm='online'; np=numPlayers; isOnline=true; amHost=true;
+  const code = Math.random().toString(36).substr(2,6).toUpperCase(); // توليد كود عشوائي من 6 خانات
+  myRoomCode = code;
+  document.getElementById('my-code').textContent = code;
+  setLobbyStatus('جارِ الاتصال...','w');
+  showScreen('lobby');
+  connectSocket();
+  socket.emit('create-room', {code, np});
+}
+
+// دالة الانضمام لغرفة أونلاين موجودة مسبقاً عبر الكود المكتوب
+function joinRoom(){
+  const code = document.getElementById('join-in').value.trim().toUpperCase();
+  if(code.length<4){ setLobbyStatus('❌ كود غير صحيح','err'); return; }
+  myRoomCode=code; amHost=false; isOnline=true; gm='online';
+  setLobbyStatus('جارِ الاتصال...','w');
+  connectSocket();
+  socket.emit('join-room',{code});
+}
+
+// دالة بدء الجيم أونلاين وتصفير القيم (يستدعيها المضيف فقط)
+function startOnlineGame(){
+  if(!amHost) return;
+  chips={}; scores=Array(np).fill(0); cp=0;
+  hands=Array.from({length:np},()=>[]);
+  setColorMap();
+  socket.emit('start-game', { code: myRoomCode });
+}
+
+// إرسال البيانات المحدثة للسيرفر بعد حركتك ليقوم السيرفر ببثها لباقي اللاعبين أونلاين
+function syncOnline(winner){
+  socket.emit('game-sync',{
+    code:myRoomCode,
+    chips, cp, scores,
+    lastCard:lastPlayedCard, cardType:lastPlayedType,
+    history:playedCardsHistory,
+    deckCount: deck.length,
+    winner
+  });
+  renderBoard(); renderHand(); updateHdr();
+  updateStatusMsg(); updateLastCardDisplay();
+  if(winner!==undefined) showWin(winner);
+}
+
+// ==================================================
+// 📌 القسم 8: النواة التشغيلية وقواعد اللعبة GAME CORE (قوانين اللعبة والتحكم باللوحة والأوراق)
+// ==================================================
+// إنشاء مجموعتين ورق كوتشينة كاملة (104 كرت) وخلطها عشوائياً
+function mkDeck(){
+  const s=['♠','♥','♦','♣'],r=['A','2','3','4','5','6','7','8','9','10','J','Q','K'],d=[];
+  s.forEach(su=>r.forEach(ra=>{d.push(ra+su);d.push(ra+su);}));
+  return d.sort(()=>Math.random()-.5);
+}
+
+// فحص الكرت لمعرفة الرمز، وفحص كروت الـ Jack (ذو العين الواحدة أو العينين) لتحديد ميزتها اللعبية
+function getCardDisplay(card){
+  const rank=card.slice(0,-1), suit=card.slice(-1);
+  if(rank==='J'){
+    const one=suit==='♥'||suit==='♠'; // كروت الجاك الأحادي العين (تزيل فيشة الخصم)
+    return{display:one?'J•':'J:',suit,type:one?'one-eyed':'two-eyed'};
+  }
+  return{display:rank,suit,type:'normal'};
+}
+
+// تهيئة المتغيرات لبدء مباراة جديدة ونظيفة على الواجهة
+function beginGame(){
+  showScreen('game');
+  over=false; sc=null;
+  playedCardsHistory={0:[],1:[],2:[],3:[],4:[],5:[]};
+  lastPlayedCard=null; lastPlayedType=null;
+  renderScores(); renderBoard(); renderHand(); updateHdr();
+  updateStatusMsg(); updateLastCardDisplay(); updateSideLabels();
+  if(!isOnline) scheduleBot();
+}
+
+// إعداد اللعبة محلياً عند اختيار اللعب الأوفلاين ضد الكمبيوتر وتوزيع الكروت الأولى
+function startLocal(mode){
+  gm=mode; isOnline=false;
+  np = mode==='bot'?2 : mode==='4p'?4 : mode==='6p'?6 : 2;
+  setColorMap();
+  deck=mkDeck(); chips={}; scores=Array(np).fill(0);
+  hands=Array.from({length:np},()=>[]);
+  const sz=np<=2?7:6; // عدد الكروت في اليد حسب عدد اللاعبين
+  for(let i=0;i<sz;i++) for(let p=0;p<np;p++) hands[p].push(deck.pop());
+  cp=0; myPI=0;
+  beginGame();
+}
+
+// بناء عناصر السكور على الواجهة حسب عدد اللاعبين أو الفرق المتاحين
+function renderScores(){
+  const el=document.getElementById('scores-el'); el.innerHTML='';
+  const tn=['A','B','C'];
+  for(let i=0;i<np;i++){
+    const lbl=np===6?`P${i+1}(${tn[i%3]}):0`:`P${i+1}:0`;
+    el.innerHTML+=`<div class="sb p${i}" id="sb${i}">${lbl}</div>`;
+  }
+}
+
+// تحديث نصوص المجموعات الجانبية (لاعب ضد لاعب أو فريق ضد فريق)
+function updateSideLabels(){
+  const l=document.getElementById('left-label'), r=document.getElementById('right-label');
+  if(np===2){l.textContent='🎴 لاعب 1'; r.textContent='🎴 لاعب 2';}
+  else if(np===4){l.textContent='🎴 فريق 1\n(1,3)'; r.textContent='🎴 فريق 2\n(2,4)';}
+  else{l.textContent='🎴 فريق A+B'; r.textContent='🎴 فريق C';}
+}
+
+// الدالة الأساسية لبناء الـ 100 مربع ورسم الفيشات وتلوين الخيارات المتاحة للعب (Highlight)
+function renderBoard(){
+  const el=document.getElementById('board'); el.innerHTML='';
+  const selCard=hands[myPI]&&hands[myPI][sc]; // الكرت المحدد حالياً في يد اللاعب
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++){
+    const cell=document.createElement('div'), val=GB[r][c];
+    cell.className='cell';
+    if(val==='★'){cell.classList.add('corn');cell.innerHTML='⭐';} // الزوايا الحرة للجميع
+    else{
+      if(['♥','♦'].includes(val.slice(-1))) cell.classList.add('rc'); // تلوين الكروت الحمراء بالـ CSS
+      const cd=getCardDisplay(val);
+      if(cd.type==='one-eyed'){
+        cell.innerHTML=`<span class="cs">${cd.suit}</span><span class="cn jack-one-eyed">${cd.display}</span>`;
+        cell.classList.add('has-jack-one');
+      } else if(cd.type==='two-eyed'){
+        cell.innerHTML=`<span class="cs">${cd.suit}</span><span class="cn jack-two-eyed">${cd.display}</span>`;
+        cell.classList.add('has-jack-two');
+      } else {
+        cell.innerHTML=`<span class="cs">${cd.suit}</span><span class="cn">${cd.display}</span>`;
+      }
+    }
+    const key=`${r},${c}`;
+    // إذا كان المربع يحتوي على فيشة ملعوبة مسبقاً، قم برسمها وتلوينها
+    if(chips[key]!==undefined){
+      const ch=document.createElement('div'); ch.className=`chip ${CC[chips[key]]}`;
+      if(chips[key+'-s']) ch.classList.add('seq'); // إضافة تأثير الـ سيكوينس المكتمل
+      cell.appendChild(ch);
+    }
+    // تلوين الأماكن القانونية المتاحة للعب في اللوحة كإرشاد للاعب حسب كرت يده المحدد
+    if(selCard&&val!=='★'){
+      if(selCard==='J♦'||selCard==='J♣'){if(chips[key]===undefined)cell.classList.add('hl-w');} // جاك بري يلون كل الفراغات
+      else if(selCard==='J♥'||selCard==='J♠'){
+        if(chips[key]!==undefined&&chips[key]!==myPI)
+          cell.classList.add(has4InLine(r,c,myPI)?'hl-r4':'hl-r'); // جاك أحمر يلون كروت الخصم لإزالتها
+      }
+      else if(val===selCard&&chips[key]===undefined) cell.classList.add('hl-m'); // كرت عادي يلون المربعين المطابقين له باللوحة
+    }
+    cell.onclick=()=>onCell(r,c); // عند الضغط على أي مربع باللوحة يتم استدعاء دالة الحركة
+    el.appendChild(cell);
+  }
+}
+
+// دالة عرض وتحديث كروت يد اللاعب الحالية على الشاشة وتحديد الكرت المختار
+function renderHand() {
+  const el = document.getElementById('hand'); 
+  if (!el) return;
+  el.innerHTML = '';
+
+  const myTurn = (cp === myPI);
+  document.getElementById('wover').className = myTurn ? 'wover' : 'wover show'; // حجب الشاشة إذا ليس دورك
+
+  let currentHand = [];
+  if (isOnline) {
+    if (hands && hands[myPI]) currentHand = hands[myPI];
+  } else {
+    const activeIdx = (typeof bi !== 'undefined') ? bi : myPI;
+    if (hands && hands[activeIdx]) currentHand = hands[activeIdx];
+  }
+
+  if (!currentHand || currentHand.length === 0) {
+    el.innerHTML = '<div style="color: #aaa; text-align:center; width:100%; padding:10px;">انتظار توزيع الأوراق...</div>';
+    return;
+  }
+
+  currentHand.forEach((card, i) => {
+    const div = document.createElement('div'); 
+    div.className = 'hc';
+    if (['♥', '♦'].includes(card.slice(-1))) div.classList.add('rc');
+    if (i === sc) div.classList.add('sel'); // تمييز الكرت المختار حالياً بـ تأثير مرئي مركب
+
+    const cd = getCardDisplay(card);
+    if (cd.type === 'one-eyed') {
+      div.innerHTML = `<span class="cs">${cd.suit}</span><span class="cn jack-one-eyed">${cd.display}</span>`;
+      div.classList.add('jack-one-eyed');
+    } else if (cd.type === 'two-eyed') {
+      div.innerHTML = `<span class="cs">${cd.suit}</span><span class="cn jack-two-eyed">${cd.display}</span>`;
+      div.classList.add('jack-two-eyed');
+    } else {
+      div.innerHTML = `<span class="cs">${cd.suit}</span><span class="cn">${cd.display}</span>`;
+    }
+
+    // ميزة حرق الكرت: إذا كان الكرت ميت ولا يوجد له فراغ باللوحة، يتم تحويل الكرت لزر حرق مباشر
+    if (!canPlayCard(card) && myTurn) {
+      div.classList.add('burned-option');
+      div.title = 'لا توجد حركة – اضغط لحرق الكرت';
+      div.onclick = () => { if (cp === myPI) burnCard(i); };
+    } else {
+      div.onclick = () => { if (myTurn && cp === myPI) { sc = i; renderBoard(); renderHand(); } };
+    }
+    el.appendChild(div);
+  });
+}
+
+// دالة فحص قانونية الكرت وهل يملك أماكن فارغة باللوحة أم أنه كرت ميت يحتاج حرق
+function canPlayCard(card){
+  if(card==='J♦'||card==='J♣'){
+    for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+      if(GB[r][c]!=='★'&&chips[`${r},${c}`]===undefined) return true;
+  } else if(card==='J♥'||card==='J♠'){
+    for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+      if(chips[`${r},${c}`]!==undefined&&chips[`${r},${c}`]!==myPI) return true;
+  } else {
+    for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+      if(GB[r][c]===card&&chips[`${r},${c}`]===undefined) return true;
+  }
+  return false;
+}
+
+// دالة قانونية تمنع إزالة فيشة الخصم عبر الجاك الأحمر إذا كانت تلك الفيشة تشكل جزءاً من سيكوينس مكتمل من 4 قطع
+function has4InLine(r,c,pi){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const[dr,dc]of dirs){
+    for(let s=-3;s<=0;s++){
+      const keys=[]; let ok=true;
+      for(let k=0;k<4;k++){
+        const nr=r+(s+k)*dr, nc=c+(s+k)*dc;
+        if(nr<0||nr>9||nc<0||nc>9){ok=false;break;}
+        const owner=chips[`${nr},${nc}`];
+        if(owner!==undefined&&owner!==pi) keys.push(`${nr},${nc}`);
+        else{ok=false;break;}
+      }
+      if(ok&&keys.length===4&&keys.includes(`${r},${c}`)) return true;
+    }
+  }
+  return false;
+}
+
+// دالة التخلص من الكرت المحروق وسحب كرت بديل من الديك المحلي أو الأونلاين
+function burnCard(idx){
+  if(cp !== myPI) return;
+  const card = hands[myPI][idx]; if(!card) return;
+  
+  lastPlayedCard = card; 
+  lastPlayedType = 'burned';
+  addToHistory(myPI, card, 'burned');
+  hands[myPI].splice(idx, 1); // حذف الكرت من يد اللاعب
+  
+  if(isOnline) {
+    if(deck.length) hands[myPI].push(deck.pop()); 
+    sc = null;
+    socket.emit('game-sync', { // مزامنة حرق الكرت مع السيرفر
+      hands: hands,
+      deck: deck,
+      lastPlayedCard: lastPlayedCard,
+      lastPlayedType: lastPlayedType,
+      bi: myPI
+    });
+  } else { // الحرق محلياً ضد البوت
+    if(deck.length) hands[myPI].push(deck.pop());
+    sc = null; 
+    cp = (cp + 1) % np; // نقل الدور للاعب التالي
+    
+    renderBoard();
+    renderHand();
+    updateHdr();
+    updateStatusMsg();
+    updateLastCardDisplay();
+    scheduleBot();
+  }
+}
+
+// الدالة التنفيذية الكبرى عند نقر مربع فارغ/مستهدف لوضع الفيشة أو إزالتها وتطبيق الحركة بالكامل
+function onCell(r,c){
+  if(cp!==myPI||sc===null) return;
+  const key=`${r},${c}`,val=GB[r][c],card=hands[myPI][sc];
+  let action=false,moveType=null;
+  
+  // معالجة نوع الكرت وضمان قانونية المربع المختار
+  if(card==='J♦'||card==='J♣'){ // جاك بري ذو عينين
+    if(chips[key]===undefined){chips[key]=myPI; action=true; moveType='place';}
+  } else if(card==='J♥'||card==='J♠'){ // جاك أحمر ذو عين واحدة لإزالة فيشة خصم
+    if(chips[key]!==undefined&&chips[key]!==myPI){
+      delete chips[key]; action=true;
+      moveType=has4InLine(r,c,myPI)?'remove4-block':'remove';
+    }
+  } else if(val===card&&chips[key]===undefined){ // كرت عادي مطابق للمربع تماماً ومكانه فارغ
+    chips[key]=myPI; action=true; moveType='match';
+  }
+  
+  if(!action) return; // إذا كانت النقرة غير قانونية نلغي استكمال الدالة
+  
+  lastPlayedCard=card; lastPlayedType=moveType;
+  addToHistory(myPI,card,moveType);
+  hands[myPI].splice(sc,1); // مسح الورقة الملعوبة من اليد
+  
+  if(isOnline) { // تنفيذ وإرسال الحركة أونلاين
+    socket.emit('draw-card', {code: myRoomCode}); // سحب كرت جديد فوري
+    sc=null;
+    
+    const seq=checkSeq(myPI); // التحقق من حدوث سيكوينس فوز
+    if(seq){scores[myPI]++;seq.forEach(k=>chips[k+'-s']=true);}
+    
+    socket.emit('game-sync', { // رفع تفاصيل حركتك المحدثة للسيرفر
+      hands: hands,
+      deck: deck,
+      chips: chips, 
+      lastPlayedCard: lastPlayedCard,
+      lastPlayedType: lastPlayedType,
+      bi: myPI,
+      winnerIndex: seq ? myPI : undefined 
+    });
+    
+  } else { // تنفيذ الحركة محلياً ضد الكمبيوتر
+    if(deck.length) hands[myPI].push(deck.pop());
+    sc=null;
+    const seq=checkSeq(myPI);
+    if(seq){scores[myPI]++;seq.forEach(k=>chips[k+'-s']=true);}
+    
+    cp=(cp+1)%np; // الانتقال لدور البوت
+    
+    renderBoard();
+    renderHand();
+    updateHdr();
+    updateStatusMsg();
+    updateLastCardDisplay();
+    if(seq) showWin(myPI); else scheduleBot(); // إذا لم يحدث فوز نجدول دور البوت تالياً
+  }
+}
+
+// دوال إدارة وتحديث شاشات عرض تاريخ الكروت الجانبية الملقاة (History Panels)
+function addToHistory(pi,card,mt){
+  if(!playedCardsHistory[pi]) playedCardsHistory[pi]=[];
+  playedCardsHistory[pi].push({card,mt});
+  if(playedCardsHistory[pi].length>8) playedCardsHistory[pi].shift();
+  rebuildSidePanels();
+}
+function rebuildSidePanels(){
+  const L=[],R=[];
+  for(let i=0;i<np;i++){
+    (playedCardsHistory[i]||[]).forEach(h=>(i%2===0?L:R).push(h));
+  }
+  renderSideCards(document.getElementById('played-cards-left'),L);
+  renderSideCards(document.getElementById('played-cards-right'),R);
+}
+function renderSideCards(el,list){
+  if(!el) return; el.innerHTML='';
+  list.slice(-10).forEach(({card,mt})=>{
+    const div=document.createElement('div'); div.className='played-card';
+    if(mt==='burned'){div.style.background='#c1121f';div.style.color='#fff';div.innerHTML='🔥';}
+    else{
+      const cd=getCardDisplay(card);
+      const red=['♥','♦'].includes(card.slice(-1));
+      if(red) div.style.color='#c1121f';
+      div.innerHTML=`<span class="suit">${card.slice(-1)}</span><span class="rank">${cd.display}</span>`;
+    }
+    el.appendChild(div);
+  });
+}
+
+// دالة كتابة نص الحالة السفلي باللغة العربية (مثال: "أنت لعبت جاك بري")
+function updateStatusMsg(){
+  const el=document.getElementById('smsg'); if(!el) return;
+  if(!lastPlayedCard){el.innerHTML='⏳ اختر ورقة';el.style.color='var(--gl)';return;}
+  const prev=(cp+np-1)%np, who=prev===myPI?'أنت':`لاعب ${prev+1}`;
+  if(lastPlayedType==='burned'){
+    el.innerHTML=`🔥 محروق: <b>${lastPlayedCard}</b> | ${who}`;el.style.color='#FF6B6B';
+  } else {
+    const cd=getCardDisplay(lastPlayedCard);
+    let msg=`🎴 <b>${cd.display}${lastPlayedCard.slice(-1)}</b>`;
+    if(lastPlayedType==='place') msg+=` | 👑 جاك برّي`;
+    else if(lastPlayedType==='remove') msg+=` | ⚔️ جاك أحمر`;
+    else if(lastPlayedType==='remove4-block') msg+=` | 🔒 قفل 4`;
+    el.innerHTML=msg+` | ${who}`; el.style.color='var(--gl)';
+  }
+}
+
+// دالة رسم شكل الكرت الأخير المصغر وعرضه في صندوق مخصص بالأسفل
+function updateLastCardDisplay(){
+  const d=document.getElementById('lastCardDisplay'); if(!d) return;
+  if(!lastPlayedCard){d.innerHTML='';d.className='last-card-box';return;}
+  if(lastPlayedType==='burned'){
+    d.innerHTML=`🔥<span class="cn">${lastPlayedCard}</span>`; d.className='last-card-box burned-card';
+  } else {
+    const cd=getCardDisplay(lastPlayedCard);
+    d.innerHTML=`<span class="cs">${lastPlayedCard.slice(-1)}</span><span class="cn">${cd.display}</span>`;
+    d.className='last-card-box';
+    if(lastPlayedCard.includes('J')){
+      if(lastPlayedType==='remove'||lastPlayedType==='remove4-block') d.classList.add('jack-red');
+      else d.classList.add('jack-wild');
+    }
+  }
+}
+
+// خوارزمية فحص الفوز المتطورة: تمسح اللوحة بـ 4 اتجاهات متقاطعة للبحث عن 5 فيشات متصلة من نفس اللون/الفريق
+function checkSeq(p){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]]; // الاتجاهات: أفقي، عمودي، مائل يمين، مائل يسار
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++) for(const[dr,dc]of dirs){
+    let cells=[];
+    for(let k=0;k<5;k++){
+      const nr=r+dr*k,nc=c+dc*k;
+      if(nr<0||nr>9||nc<0||nc>9) break;
+      const own=chips[`${nr},${nc}`];
+      // فحص الملكية بما يتوافق مع نظام الفردي أو الفرق (الشركاء يملكون نفس الحظوظ)
+      const mine=GB[nr][nc]==='★'||own===p
+        ||(np===4&&(own===(p+2)%4||own===(p-2+4)%4))
+        ||(np===6&&own!==undefined&&own%3===p%3);
+      if(mine) cells.push(`${nr},${nc}`); else break;
+    }
+    if(cells.length===5) return cells; // العثور على سيكوينس كامل!
+  }
+  return null;
+}
+
+// دالة تحديث الشريط العلوي لتنبيه اللاعب ببدء دوره أو تلوين خلفية سكور اللاعب النشط حالياً
+function updateHdr(){
+  document.getElementById('tlbl').textContent=cp===myPI?'دورك!':'انتظر...';
+  document.getElementById('tdot').style.background=PC[cp%PC.length];
+  const tn=['A','B','C'];
+  for(let i=0;i<np;i++){
+    const el=document.getElementById(`sb${i}`); if(!el) continue;
+    el.textContent=np===6?`P${i+1}(${tn[i%3]}):${scores[i]}`:`P${i+1}:${scores[i]}`;
+    el.classList.toggle('active-turn', i===cp);
+  }
+}
+
+// فتح شاشة المودال المنبثقة لتهنئة الفائز وقفل الجيم
+function showWin(p){
+  over=true;
+  const mine=np===6?(p%3)===(myPI%3):(p%2)===(myPI%2);
+  const tn=['A','B','C'];
+  document.getElementById('mtitle').textContent=mine?'🎉 فوز!':'😔 خسارة';
+  document.getElementById('mmsg').textContent= `لاعب ${p+1}${np===6?` (فريق ${tn[p%3]})`:''} وفريقه ربحوا!`;
+  document.getElementById('modal').classList.add('show');
+}
+
+// ==================================================
+// 📌 القسم 9: محرك الذكاء الاصطناعي للبوت AI ENGINE (خوارزميات ذكاء اصطناعي وتحديد وزن الحركات)
+// ==================================================
+// دالة لتحديد من هم خصوم البوت في هذا الطور لتجنب ضرب حلفائه
+function getOpps(pi){
+  if(np===6) return[0,1,2,3,4,5].filter(i=>i%3!==pi%3);
+  if(np===4) return[(pi+1)%4,(pi+3)%4];
+  return[(pi+1)%np];
+}
+// دالة لتحديد إذا كانت الفيشة الموجودة تخص فريق البوت أم لا للتعاون معها
+function isTeam(owner,pi){
+  if(owner===undefined) return false;
+  if(np===6) return owner%3===pi%3;
+  if(np===4) return owner===pi||owner===(pi+2)%4;
+  return owner===pi;
+}
+
+// دالة التقييم الرياضي الكبرى (Heuristic Function): تحلل خطورة كل حركة وتعطيها وزناً رقمياً هائلاً إذا كانت ستغلق خطاً أو تمنع الخصم من الفوز
+function evalBoard(sc,pi){
+  let score=0;
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]], opps=getOpps(pi);
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++) for(const[dr,dc]of dirs){
+    let m=0,mb=false;
+    for(let k=0;k<5;k++){
+      const nr=r+dr*k,nc=c+dc*k;
+      if(nr<0||nr>9||nc<0||nc>9){mb=true;break;}
+      const o=sc[`${nr},${nc}`];
+      if(GB[nr][nc]==='★') m++;
+      else if(isTeam(o,pi)) m++;
+      else if(o===undefined){m++;break;}
+      else{mb=true;break;}
+    }
+    // منح نقاط تصاعدية للبوت حسب اقترابه من تكوين السيكوينس (خط من 2، 3، أو 4 قطع)
+    if(!mb){
+      if(m>=5) score+=1000000; // حركة فوز حاسمة
+      else if(m===4) score+=50000;
+      else if(m===3) score+=5000;
+      else if(m===2) score+=400;
+      else score+=30;
+    }
+    // خصم نقاط دفاعية لمنع الخصم من تشكيل خطوطه وإجباره على التصدّي له
+    for(const op of opps){
+      let oc=0,ob=false;
+      for(let k=0;k<5;k++){
+        const nr=r+dr*k,nc=c+dc*k;
+        if(nr<0||nr>9||nc<0||nc>9){ob=true;break;}
+        const o=sc[`${nr},${nc}`];
+        if(GB[nr][nc]==='★') oc++;
+        else if(isTeam(o,op)) oc++;
+        else if(o===undefined){oc++;break;}
+        else{ob=true;break;}
+      }
+      if(!ob){
+        if(oc>=5) score-=900000;
+        else if(oc===4) score-=40000; // الخصم يملك 4 كروت! حركة دفاعية طارئة لقطع الطريق
+        else if(oc===3) score-=3000;
+        else if(oc===2) score-=200;
+      }
+    }
+  }
+  // تشجيع البوت على اللعب في مركز اللوحة والابتعاد عن الأطراف العقيمة في بداية الجيم
+  for(const[k,o]of Object.entries(sc)){
+    if(k.includes('-s')) continue;
+    if(isTeam(o,pi)){
+      const[r,c]=k.split(',').map(Number);
+      score+=Math.max(0,(8-Math.abs(r-4.5)-Math.abs(c-4.5)))*8;
+    }
+  }
+  return score;
+}
+
+// دالة تجميع كافة الأماكن المتاحة قانونياً لكل كرت يملكه البوت في يده حالياً
+function validMoves(card,pi,sc){
+  const moves=[], opps=getOpps(pi);
+  if(card==='J♦'||card==='J♣'){
+    for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+      if(GB[r][c]!=='★'&&sc[`${r},${c}`]===undefined) moves.push({r,c,type:'place'});
+  } else if(card==='J♥'||card==='J♠'){
+    for(let r=0;r<10;r++) for(let c=0;c<10;c++){
+      const o=sc[`${r},${c}`]; if(o!==undefined&&opps.includes(o)) moves.push({r,c,type:'remove'});
+    }
+  } else {
+    for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+      if(GB[r][c]===card&&sc[`${r},${c}`]===undefined) moves.push({r,c,type:'match'});
+  }
+  return moves;
+}
+
+// محاكاة وضع الفيشة مؤقتاً في مصفوفة افتراضية لفحص نتائجها الرياضية قبل تطبيقها الفعلي
+function applyM(sc,move,pi){
+  const s={...sc};
+  if(move.type==='remove') delete s[`${move.r},${move.c}`];
+  else s[`${move.r},${move.c}`]=pi;
+  return s;
+}
+
+// دالة محاكاة الفوز الحاسم للبوت للتأكد من اختيار الحركة بدون تردد
+function winSim(pi,sc){
+  const d=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++) for(const[dr,dc]of d){
+    let n=0;
+    for(let k=0;k<5;k++){
+      const nr=r+dr*k,nc=c+dc*k;
+      if(nr<0||nr>9||nc<0||nc>9) break;
+      const o=sc[`${nr},${nc}`];
+      if(GB[nr][nc]==='★'||isTeam(o,pi)) n++; else break;
+    }
+    if(n===5) return true;
+  }
+  return false;
+}
+
+// دالة وزن الحركة وتأخير قرارات استخدام كروت الـ Jacks القوية حتى تمتلئ اللوحة لتعظيم فائدتها
+function scoreMove(move,card,pi,sc){
+  const after=applyM(sc,move,pi);
+  if(move.type!=='remove'&&winSim(pi,after)) return 2000000;
+  let s=evalBoard(after,pi);
+  const total=Object.keys(sc).filter(k=>!k.includes('-s')).length;
+  if(card==='J♦'||card==='J♣') s*=(total<15?0.25:0.6); // حماية الجاك البري في البداية
+  if(card==='J♥'||card==='J♠') s*=(total<12?0.15:total<25?0.7:1.1); // حماية الجاك الأحمر
+  return s;
+}
+
+// الخوارزمية التي تدور على كافة الحركات وكروت اليد لتستخرج الحركة صاحبة الرقم الأعلى (أفضل حركة للبوت)
+function getBestMove(pi){
+  const hand=hands[pi]; if(!hand||!hand.length) return null;
+  let best=-Infinity, bestMove=null;
+  for(let ci=0;ci<hand.length;ci++){
+    for(const move of validMoves(hand[ci],pi,chips)){
+      const s=scoreMove(move,hand[ci],pi,chips);
+      if(s>best){best=s; bestMove={cardIdx:ci,...move};}
+    }
+  }
+  if(!bestMove){ // إذا لم يجد أي حركة قانونية، يختار كرت عادي ميت ليقوم بحرقه فوراً
+    let bi=hand.findIndex(c=>!'J♦J♣J♥J♠'.includes(c));
+    return{cardIdx:bi<0?0:bi,type:'burn'};
+  }
+  return bestMove;
+}
+
+// دالة جدولة تشغيل دور البوت بعد مهلة زمنية عشوائية (300 إلى 500 ملي ثانية) لمحاكاة التفكير البشري
+function scheduleBot(){
+  if(over||cp===myPI||!gm||gm==='online') return;
+  setTimeout(runBot,300+Math.random()*200);
+}
+
+// الدالة التنفيذية الكبرى للبوت: تستلم تفاصيل "أفضل حركة"، تعدل اللوحة، تسحب كرت جديد، وتنقل الدور لك مجدداً
+function runBot(){
+  if(over||cp===myPI) return;
+  const bi=cp, move=getBestMove(bi);
+  if(!move){cp=(cp+1)%np; renderBoard(); renderHand(); updateHdr(); scheduleBot(); return;}
+
+  // حالة تنفيذ البوت لـ حرق كرت ميت
+  if(move.type==='burn'){
+    const card=hands[bi][move.cardIdx]; if(!card) return;
+    lastPlayedCard=card; lastPlayedType='burned';
+    addToHistory(bi,card,'burned');
+    hands[bi].splice(move.cardIdx,1);
+    if(deck.length) hands[bi].push(deck.pop());
+    cp=(cp+1)%np;
+    renderBoard(); renderHand(); updateHdr(); updateStatusMsg(); updateLastCardDisplay();
+    scheduleBot(); return;
+  }
+
+  if(move.cardIdx>=hands[bi].length) return;
+  const card=hands[bi][move.cardIdx]; if(!card) return;
+  const key=`${move.r},${move.c}`; let action=false, mt=move.type;
+
+  // وضع الفيشة أو إزالة فيشة الخصم للبوت فعلياً باللوحة المباشرة
+  if(card==='J♦'||card==='J♣'){if(chips[key]===undefined){chips[key]=bi; action=true;}}
+  else if(card==='J♥'||card==='J♠'){
+    if(chips[key]!==undefined&&getOpps(bi).includes(chips[key])){
+      delete chips[key]; action=true; mt=has4InLine(move.r,move.c,bi)?'remove4-block':'remove';
+    }
+  } else if(GB[move.r][move.c]===card&&chips[key]===undefined){chips[key]=bi; action=true;}
+
+  if(!action){cp=(cp+1)%np; renderBoard(); renderHand(); updateHdr(); scheduleBot(); return;}
+  
+  lastPlayedCard=card; lastPlayedType=mt;
+  addToHistory(bi,card,mt);
+  hands[bi].splice(move.cardIdx,1); // إنقاص الكرت الملعوب من يد البوت
+  if(deck.length) hands[bi].push(deck.pop()); // جعل البوت يسحب كرت جديد تلقائياً
+  
+  const seq=checkSeq(bi); // فحص هل فاز البوت؟
+  if(seq){scores[bi]++; seq.forEach(k=>chips[k+'-s']=true);
+    renderBoard(); renderHand(); updateHdr(); updateStatusMsg(); updateLastCardDisplay();
+    showWin(bi); return;
+  }
+  cp=(cp+1)%np; // نقل الدور للاعب الحقيقي
+  renderBoard(); renderHand(); updateHdr(); updateStatusMsg(); updateLastCardDisplay();
+  scheduleBot();
+}
+</script>
+</body>
+</html>
