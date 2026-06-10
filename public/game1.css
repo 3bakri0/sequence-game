@@ -1,138 +1,911 @@
+/* ============================================================
+   SEQUENCE GAME – game1.css
+   ترتيب الأقسام:
+   1. خط + متغيرات الألوان
+   2. إعادة تهيئة عامة
+   3. Keyframe Animations
+   4. شاشة القائمة (Menu)
+   5. شاشة اللوبي (Lobby)
+   6. شريط الحالة (Status Bar)
+   7. شاشة اللعبة – الهيدر
+   8. شاشة اللعبة – الجسم الرئيسي
+   9. اللوحة (Board) والخلايا (Cells)
+   10. الفيشات (Chips)
+   11. يد اللاعب (Hand)
+   12. الكرت الأخير + رسائل الحالة
+   13. اللوحات الجانبية (Side Panels)
+   14. Overlays: فوز / انتظار / قطع اتصال
+   15. Responsive – Tablet (max 900px)
+   16. Responsive – Mobile (max 600px)
+   17. Responsive – Mobile XS (max 380px)
+   ============================================================ */
+
+
+/* ══════════════════════════════════════════════════
+   1. خط + متغيرات الألوان
+   ══════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-:root{--g:#2d6a4f;--gl:#52b788;--red:#c1121f;--bl:#457b9d;--gold:#e9c46a;--bg:#1a1a2e;--cbg:#16213e;--felt:#1b4332;--fb:#40916c;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Tajawal',sans-serif;background:var(--bg);color:#fff;min-height:100vh;overflow-x:hidden;}
-.screen{display:none;width:100%;min-height:100vh;}
-.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes flicker{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.8;transform:scale(1.1)}}
-@keyframes burnFlicker{0%,100%{box-shadow:0 0 25px rgba(255,23,68,1),inset 0 0 15px rgba(0,0,0,.3)}50%{box-shadow:0 0 35px rgba(255,23,68,.8),inset 0 0 20px rgba(255,0,0,.2)}}
 
-/* ── MENU ── */
-#menu{background:radial-gradient(ellipse at 50% 0%,#0d3b26,#0a0a1a 70%);text-align:center;gap:1.1rem;padding:1.5rem;}
-.logo{font-size:3rem;font-weight:900;letter-spacing:.1em;background:linear-gradient(135deg,var(--gold),#f4a261,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:pulse 3s ease-in-out infinite;}
-.subtitle{color:var(--gl);font-size:.9rem;letter-spacing:.2em;}
-.cprev{display:flex;gap:.4rem;justify-content:center;margin:.3rem 0;}
-.pc{width:38px;height:54px;border-radius:5px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.4);animation:float 3s ease-in-out infinite;color:#222;}
-.pc.r{color:#c1121f;}
-.msec{background:var(--cbg);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:.9rem 1rem;width:100%;max-width:420px;display:flex;flex-direction:column;gap:.6rem;}
-.msec h3{color:var(--gold);font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.35rem;}
-.brow{display:flex;gap:.55rem;flex-wrap:wrap;justify-content:center;}
-.btn{padding:.6rem 1.2rem;border-radius:50px;border:none;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:.88rem;font-weight:700;transition:all .16s;}
-.bp{background:linear-gradient(135deg,var(--g),var(--gl));color:#fff;box-shadow:0 3px 12px rgba(82,183,136,.3);}
-.bp:hover{transform:translateY(-2px);}
-.bs{background:transparent;color:var(--gl);border:2px solid var(--gl);}
-.bs:hover{background:var(--gl);color:#fff;}
-.bo{background:linear-gradient(135deg,#1d3557,var(--bl));color:#fff;box-shadow:0 3px 12px rgba(69,123,157,.3);}
-.bo:hover{transform:translateY(-2px);}
-.bg6{background:linear-gradient(135deg,#6b2fa0,#9b5de5);color:#fff;box-shadow:0 3px 12px rgba(155,93,229,.3);}
-.bg6:hover{transform:translateY(-2px);}
+:root {
+  /* ألوان اللعبة الأساسية */
+  --g:    #2d6a4f;   /* أخضر داكن */
+  --gl:   #52b788;   /* أخضر فاتح */
+  --red:  #c1121f;   /* أحمر */
+  --bl:   #457b9d;   /* أزرق */
+  --gold: #e9c46a;   /* ذهبي */
 
-/* ── LOBBY ── */
-#lobby{background:radial-gradient(ellipse at 50% 0%,#0d1f3b,#0a0a1a 70%);gap:1.1rem;padding:1.5rem;max-width:440px;margin:0 auto;text-align:center;width:100%;}
-#lobby h2{color:var(--gold);font-size:1.5rem;}
-.lbox{background:var(--cbg);border:1px solid var(--bl);border-radius:12px;padding:1.1rem;width:100%;display:flex;flex-direction:column;gap:.75rem;}
-.lbox h3{color:#90e0ef;font-size:.85rem;}
-.rcode{background:#0d1b2a;border:2px solid var(--gold);border-radius:10px;padding:.65rem 1rem;font-size:1.7rem;font-weight:900;letter-spacing:.3em;color:var(--gold);text-align:center;cursor:pointer;transition:all .2s;user-select:all;}
-.rcode:hover{background:#122030;}
-.divider{display:flex;align-items:center;gap:.7rem;color:#555;font-size:.78rem;}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:#333;}
-.ci{background:#0d1b2a;border:2px solid var(--bl);border-radius:10px;padding:.6rem 1rem;color:#fff;font-size:1.2rem;font-family:'Tajawal',sans-serif;text-align:center;letter-spacing:.2em;width:100%;outline:none;}
-.cst{display:flex;align-items:center;gap:.45rem;justify-content:center;font-size:.8rem;padding:.5rem;border-radius:8px;}
-.cst.w{background:rgba(233,196,106,.1);color:var(--gold);border:1px solid rgba(233,196,106,.3);}
-.cst.ok{background:rgba(82,183,136,.1);color:var(--gl);border:1px solid rgba(82,183,136,.3);}
-.cst.err{background:rgba(193,18,31,.1);color:#e63946;border:1px solid rgba(193,18,31,.3);}
-.pd{width:7px;height:7px;border-radius:50%;animation:blink 1s infinite;}
-.pd.g{background:var(--gold);}
-.pd.k{background:var(--gl);}
+  /* خلفيات */
+  --bg:   #1a1a2e;   /* خلفية الصفحة الرئيسية */
+  --cbg:  #16213e;   /* خلفية الكروت والصناديق */
+  --felt: #1b4332;   /* لون نسيج طاولة اللعب */
+  --fb:   #40916c;   /* إطار طاولة اللعب */
 
-/* ── ONLINE STATUS BAR ── */
-#statusBar{position:fixed;top:0;left:0;right:0;padding:.3rem 1rem;font-size:.75rem;text-align:center;z-index:999;display:none;transition:all .3s;}
-#statusBar.show{display:block;}
+  /* أحجام الخلية – ستُعاد كتابتها في الـ breakpoints */
+  --cell-w: 36px;
+  --cell-h: 50px;
+  --chip-sz: 25px;
+  --card-w:  45px;
+  --card-h:  64px;
+}
 
-/* ── GAME ── */
-#game{background:#111;padding:0;justify-content:flex-start;}
-.ghdr{width:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);padding:.48rem .75rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07);z-index:10;position:sticky;top:0;gap:.3rem;flex-wrap:wrap;}
-.scores{display:flex;gap:.45rem;align-items:center;}
-.sb{padding:.2rem .55rem;border-radius:16px;font-weight:700;font-size:.72rem;}
-.sb.p0{background:rgba(82,183,136,.18);border:1px solid var(--gl);color:var(--gl);}
-.sb.p1{background:rgba(193,18,31,.18);border:1px solid #e63946;color:#e63946;}
-.sb.p2{background:rgba(69,123,157,.18);border:1px solid var(--bl);color:#90e0ef;}
-.sb.p3{background:rgba(155,93,229,.18);border:1px solid #9b5de5;color:#c8a8ff;}
-.sb.p4{background:rgba(255,165,0,.18);border:1px solid #ffa500;color:#ffa500;}
-.sb.p5{background:rgba(0,255,200,.18);border:1px solid #00ffc8;color:#00ffc8;}
-.sb.active-turn{box-shadow:0 0 8px currentColor;}
-.ti{font-size:.73rem;color:var(--gold);font-weight:700;display:flex;align-items:center;gap:.32rem;}
-.td{width:7px;height:7px;border-radius:50%;animation:blink 1s infinite;}
-.xbtn{padding:.3rem .75rem;border-radius:20px;border:1.5px solid #888;background:rgba(255,255,255,.06);color:#ccc;cursor:pointer;font-size:.8rem;font-weight:700;font-family:'Tajawal',sans-serif;}
-.gbody{display:flex;flex-direction:row;align-items:flex-start;width:100%;flex:1;padding:.4rem;gap:.6rem;overflow-y:auto;justify-content:space-between;}
-.game-center{display:flex;flex-direction:column;align-items:center;gap:.4rem;flex:1;overflow-y:auto;}
-.played-cards-side{display:flex;flex-direction:column;gap:.4rem;width:110px;min-width:90px;padding:.5rem;background:rgba(0,0,0,.3);border-radius:8px;align-items:center;}
-.played-cards-side.left-side{border:2px solid var(--bl);}
-.played-cards-side.right-side{border:2px solid var(--red);}
-.side-label{color:var(--gold);font-weight:bold;font-size:.8rem;text-align:center;white-space:pre-line;}
-.played-cards-area{display:flex;flex-direction:column;gap:.25rem;width:100%;max-height:280px;overflow-y:auto;align-items:center;}
-.played-card{width:46px;height:64px;background:#fff;border:2px solid var(--gold);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:bold;color:#222;box-shadow:0 2px 6px rgba(0,0,0,.4);animation:slideIn .25s ease-out;font-size:.7rem;}
-.played-card .suit{font-size:1.1rem;line-height:1;}
-.played-card .rank{font-size:.7rem;line-height:1;}
-.bwrap{background:var(--felt);border:3px solid var(--fb);border-radius:10px;padding:5px;box-shadow:0 6px 28px rgba(0,0,0,.5);overflow:auto;max-width:100%;}
-.board{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;}
-.cell{width:36px;height:50px;background:#fff;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;font-weight:700;color:#222;overflow:hidden;border:2px solid transparent;transition:border-color .1s;}
-.cell.corn{background:#263225;cursor:default;}
-.cell .cs{font-size:.78rem;line-height:1.1;}
-.cell .cn{font-size:.54rem;line-height:1;}
-.cell.rc{color:#c1121f;}
-.cell.has-jack-one{background:rgba(193,18,31,.12);}
-.cell.has-jack-two{background:rgba(144,224,239,.12);}
-.cell .jack-one-eyed{color:#c1121f;font-weight:900;}
-.cell .jack-two-eyed{color:#1d4080;font-weight:900;}
-.cell.hl-m{border:2px solid var(--gold)!important;background:rgba(233,196,106,.18)!important;}
-.cell.hl-w{border:2px solid #90e0ef!important;background:rgba(144,224,239,.14)!important;}
-.cell.hl-r{border:2px solid #e63946!important;background:rgba(230,57,70,.14)!important;}
-.cell.hl-r4{border:3px solid #ff1744!important;background:rgba(255,23,68,.26)!important;box-shadow:0 0 8px rgba(255,23,68,.5) inset;}
-.chip{position:absolute;width:25px;height:25px;border-radius:50%;border:2px solid rgba(255,255,255,.38);top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;transition:box-shadow .2s;}
-.chip.c0{background:radial-gradient(circle at 35% 35%,#74e8a0,#2d6a4f);}
-.chip.c1{background:radial-gradient(circle at 35% 35%,#f87171,#c1121f);}
-.chip.c2{background:radial-gradient(circle at 35% 35%,#93c5fd,#1d4080);}
-.chip.c3{background:radial-gradient(circle at 35% 35%,#c8a8ff,#6b2fa0);}
-.chip.c4{background:radial-gradient(circle at 35% 35%,#ffd166,#e07b00);}
-.chip.c5{background:radial-gradient(circle at 35% 35%,#80ffdb,#0d7a5f);}
-.chip.seq{border:3px solid var(--gold);box-shadow:0 0 10px var(--gold);}
-.ha{width:100%;max-width:660px;}
-.hlbl{font-size:.68rem;color:#888;text-align:center;margin-bottom:.28rem;text-transform:uppercase;letter-spacing:.1em;}
-.hand{display:flex;gap:5px;justify-content:center;overflow-x:auto;padding:.28rem;}
-.hc{width:45px;height:64px;background:#fff;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;font-size:.64rem;font-weight:700;color:#222;flex-shrink:0;transition:transform .15s,border-color .15s,box-shadow .15s;}
-.hc .cs{font-size:.88rem;}
-.hc.rc{color:#c1121f;}
-.hc.jack-one-eyed{color:#ff6666;border-color:#ff6666;background:rgba(255,179,102,.1);}
-.hc.jack-two-eyed{color:#00D4FF;border-color:#00D4FF;background:rgba(0,212,255,.1);}
-.hc.sel{border-color:var(--gold);box-shadow:0 0 12px var(--gold);transform:translateY(-6px);}
-.hc.jack-one-eyed.sel{border-color:#ff6666;box-shadow:0 0 12px rgba(255,102,102,.6);}
-.hc.jack-two-eyed.sel{border-color:#00D4FF;box-shadow:0 0 12px rgba(0,212,255,.6);}
-.hc.burned-option{background:linear-gradient(135deg,#c1121f,#8b0000)!important;color:#fff!important;border:3px solid #ff1744!important;position:relative;box-shadow:inset 0 0 15px rgba(0,0,0,.5),0 0 18px rgba(255,23,68,.7)!important;}
-.hc.burned-option::after{content:'🔥';position:absolute;top:-10px;right:-8px;font-size:1.3rem;animation:flicker .6s infinite;}
-.hc.burned-option:hover{transform:scale(1.08)!important;}
-.last-card-box{width:60px;height:85px;background:#fff;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--gold);box-shadow:0 0 14px rgba(233,196,106,.35);font-size:1.2rem;font-weight:900;color:#222;min-width:60px;}
-.last-card-box.jack-red{border-color:#c1121f;box-shadow:0 0 18px rgba(193,18,31,.6);background:#ffe0e0;}
-.last-card-box.jack-wild{border-color:#FFD700;box-shadow:0 0 18px rgba(255,215,0,.55);background:#fff9e0;}
-.last-card-box.burned-card{border-color:#ff1744;background:linear-gradient(135deg,#c1121f,#8b0000);color:#fff;animation:burnFlicker .8s ease-in-out infinite;}
-.last-card-box .cs{font-size:1.5rem;margin-bottom:4px;}
-.last-card-box .cn{font-size:.7rem;}
-.status-row{display:flex;justify-content:center;align-items:center;gap:16px;margin:6px 0;}
-#smsg{text-align:center;color:var(--gl);font-weight:700;font-size:.82rem;}
-.mover{display:none;position:fixed;inset:0;background:rgba(0,0,0,.83);z-index:100;align-items:center;justify-content:center;}
-.mover.show{display:flex;}
-.modal{background:var(--cbg);border:2px solid var(--gold);border-radius:16px;padding:1.8rem;text-align:center;max-width:310px;width:90%;}
-.modal h2{font-size:1.5rem;margin-bottom:.5rem;}
-.modal p{color:#ccc;margin:.6rem 0 1.2rem;}
-.wover{display:none;position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.92);border:1px solid var(--bl);border-radius:11px;padding:.55rem 1.2rem;font-size:.8rem;color:#90e0ef;z-index:50;align-items:center;gap:.45rem;white-space:nowrap;}
-.wover.show{display:flex;}
 
-/* ── DISCONNECT OVERLAY ── */
-#disconnectOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:1rem;text-align:center;padding:2rem;}
-#disconnectOverlay.show{display:flex;}
-#disconnectOverlay h2{color:#e63946;font-size:1.6rem;}
-#disconnectOverlay p{color:#aaa;}
+/* ══════════════════════════════════════════════════
+   2. إعادة تهيئة عامة (Reset)
+   ══════════════════════════════════════════════════ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Tajawal', sans-serif;
+  background: var(--bg);
+  color: #fff;
+  min-height: 100vh;
+  /* يمنع التمرير الأفقي على الجوال */
+  overflow-x: hidden;
+}
+
+/* كل شاشة مخفية افتراضياً */
+.screen {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* الشاشة النشطة فقط تظهر */
+.screen.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ══════════════════════════════════════════════════
+   3. Keyframe Animations
+   ══════════════════════════════════════════════════ */
+
+/* نبض هادئ للشعار */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .85; }
+}
+
+/* طفو الكروت في القائمة */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-7px); }
+}
+
+/* وميض نقطة الدور */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .2; }
+}
+
+/* ظهور الكرت في اللوحة الجانبية */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* رفرفة أيقونة الحرق */
+@keyframes flicker {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .8; transform: scale(1.1); }
+}
+
+/* وميض إطار الكرت المحترق */
+@keyframes burnFlicker {
+  0%, 100% { box-shadow: 0 0 25px rgba(255,23,68,1),  inset 0 0 15px rgba(0,0,0,.3); }
+  50%       { box-shadow: 0 0 35px rgba(255,23,68,.8), inset 0 0 20px rgba(255,0,0,.2); }
+}
+
+/* احترام تفضيل "تقليل الحركة" لمن يعاني من دوار */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════
+   4. شاشة القائمة (Menu)
+   ══════════════════════════════════════════════════ */
+#menu {
+  background: radial-gradient(ellipse at 50% 0%, #0d3b26, #0a0a1a 70%);
+  text-align: center;
+  gap: 1.1rem;
+  padding: 1.5rem;
+}
+
+/* شعار SEQUENCE */
+.logo {
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  background: linear-gradient(135deg, var(--gold), #f4a261, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.subtitle {
+  color: var(--gl);
+  font-size: .9rem;
+  letter-spacing: .2em;
+}
+
+/* معاينة كروت في القائمة */
+.cprev {
+  display: flex;
+  gap: .4rem;
+  justify-content: center;
+  margin: .3rem 0;
+}
+
+.pc {
+  width: 38px;
+  height: 54px;
+  border-radius: 5px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .85rem;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(0,0,0,.4);
+  animation: float 3s ease-in-out infinite;
+  color: #222;
+}
+.pc.r { color: #c1121f; }
+
+/* صندوق قسم اللعب (أونلاين / بوت) */
+.msec {
+  background: var(--cbg);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: .9rem 1rem;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+.msec h3 {
+  color: var(--gold);
+  font-size: .82rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding-bottom: .35rem;
+}
+
+/* صف الأزرار */
+.brow {
+  display: flex;
+  gap: .55rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── الأزرار العامة ── */
+.btn {
+  padding: .6rem 1.2rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Tajawal', sans-serif;
+  font-size: .88rem;
+  font-weight: 700;
+  transition: all .16s;
+  /* ضمان حجم لمس مريح على الجوال (44px minimum) */
+  min-height: 44px;
+}
+
+/* أخضر */
+.bp { background: linear-gradient(135deg, var(--g), var(--gl)); color: #fff; box-shadow: 0 3px 12px rgba(82,183,136,.3); }
+.bp:hover { transform: translateY(-2px); }
+
+/* شفاف */
+.bs { background: transparent; color: var(--gl); border: 2px solid var(--gl); }
+.bs:hover { background: var(--gl); color: #fff; }
+
+/* أزرق */
+.bo { background: linear-gradient(135deg, #1d3557, var(--bl)); color: #fff; box-shadow: 0 3px 12px rgba(69,123,157,.3); }
+.bo:hover { transform: translateY(-2px); }
+
+/* بنفسجي */
+.bg6 { background: linear-gradient(135deg, #6b2fa0, #9b5de5); color: #fff; box-shadow: 0 3px 12px rgba(155,93,229,.3); }
+.bg6:hover { transform: translateY(-2px); }
+
+
+/* ══════════════════════════════════════════════════
+   5. شاشة اللوبي (Lobby)
+   ══════════════════════════════════════════════════ */
+#lobby {
+  background: radial-gradient(ellipse at 50% 0%, #0d1f3b, #0a0a1a 70%);
+  gap: 1.1rem;
+  padding: 1.5rem;
+  /* تمركز بحد أقصى على الشاشات الكبيرة */
+  max-width: 440px;
+  margin: 0 auto;
+  text-align: center;
+  width: 100%;
+}
+#lobby h2 { color: var(--gold); font-size: 1.5rem; }
+
+/* صندوق اللوبي */
+.lbox {
+  background: var(--cbg);
+  border: 1px solid var(--bl);
+  border-radius: 12px;
+  padding: 1.1rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.lbox h3 { color: #90e0ef; font-size: .85rem; }
+
+/* كود الغرفة الكبير القابل للنسخ */
+.rcode {
+  background: #0d1b2a;
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  padding: .65rem 1rem;
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: .3em;
+  color: var(--gold);
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  user-select: all;
+}
+.rcode:hover { background: #122030; }
+
+/* خط فاصل "أو" */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  color: #555;
+  font-size: .78rem;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #333;
+}
+
+/* حقل إدخال الكود */
+.ci {
+  background: #0d1b2a;
+  border: 2px solid var(--bl);
+  border-radius: 10px;
+  padding: .6rem 1rem;
+  color: #fff;
+  font-size: 1.2rem;
+  font-family: 'Tajawal', sans-serif;
+  text-align: center;
+  letter-spacing: .2em;
+  width: 100%;
+  outline: none;
+}
+
+/* شريط حالة الغرفة (جاري / موجودة / خطأ) */
+.cst {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  justify-content: center;
+  font-size: .8rem;
+  padding: .5rem;
+  border-radius: 8px;
+}
+.cst.w   { background: rgba(233,196,106,.1); color: var(--gold); border: 1px solid rgba(233,196,106,.3); }
+.cst.ok  { background: rgba(82,183,136,.1);  color: var(--gl);   border: 1px solid rgba(82,183,136,.3); }
+.cst.err { background: rgba(193,18,31,.1);   color: #e63946;     border: 1px solid rgba(193,18,31,.3); }
+
+/* نقطة الحالة الوامضة */
+.pd { width: 7px; height: 7px; border-radius: 50%; animation: blink 1s infinite; }
+.pd.g { background: var(--gold); }
+.pd.k { background: var(--gl); }
+
+
+/* ══════════════════════════════════════════════════
+   6. شريط الحالة العلوي (Status Bar)
+   ══════════════════════════════════════════════════ */
+#statusBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: .3rem 1rem;
+  font-size: .75rem;
+  text-align: center;
+  z-index: 999;
+  /* مخفي افتراضياً */
+  display: none;
+  transition: all .3s;
+}
+#statusBar.show { display: block; }
+
+
+/* ══════════════════════════════════════════════════
+   7. شاشة اللعبة – الهيدر العلوي
+   ══════════════════════════════════════════════════ */
+#game {
+  background: #111;
+  padding: 0;
+  /* يبدأ المحتوى من الأعلى لا من المنتصف */
+  justify-content: flex-start;
+}
+
+/* شريط الهيدر اللاصق في الأعلى */
+.ghdr {
+  width: 100%;
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(10px);
+  padding: .48rem .75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  z-index: 10;
+  /* يبقى في الأعلى أثناء التمرير */
+  position: sticky;
+  top: 0;
+  gap: .3rem;
+  flex-wrap: wrap;
+}
+
+/* صناديق السكور */
+.scores { display: flex; gap: .45rem; align-items: center; }
+.sb {
+  padding: .2rem .55rem;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: .72rem;
+}
+/* ألوان مختلفة لكل لاعب */
+.sb.p0 { background: rgba(82,183,136,.18);  border: 1px solid var(--gl);   color: var(--gl); }
+.sb.p1 { background: rgba(193,18,31,.18);   border: 1px solid #e63946;     color: #e63946; }
+.sb.p2 { background: rgba(69,123,157,.18);  border: 1px solid var(--bl);   color: #90e0ef; }
+.sb.p3 { background: rgba(155,93,229,.18);  border: 1px solid #9b5de5;     color: #c8a8ff; }
+.sb.p4 { background: rgba(255,165,0,.18);   border: 1px solid #ffa500;     color: #ffa500; }
+.sb.p5 { background: rgba(0,255,200,.18);   border: 1px solid #00ffc8;     color: #00ffc8; }
+/* توهج صاحب الدور الحالي */
+.sb.active-turn { box-shadow: 0 0 8px currentColor; }
+
+/* مؤشر الدور (نص + نقطة) */
+.ti {
+  font-size: .73rem;
+  color: var(--gold);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: .32rem;
+}
+.td { width: 7px; height: 7px; border-radius: 50%; animation: blink 1s infinite; }
+
+/* زر الخروج */
+.xbtn {
+  padding: .3rem .75rem;
+  border-radius: 20px;
+  border: 1.5px solid #888;
+  background: rgba(255,255,255,.06);
+  color: #ccc;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 700;
+  font-family: 'Tajawal', sans-serif;
+  /* ضمان حجم لمس مريح */
+  min-height: 36px;
+}
+
+
+/* ══════════════════════════════════════════════════
+   8. شاشة اللعبة – الجسم (gbody)
+   ══════════════════════════════════════════════════ */
+
+/* الحاوية الرئيسية: اللوحة الجانبية اليسرى + اللوحة + اليمنى */
+.gbody {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+  flex: 1;
+  padding: .4rem;
+  gap: .6rem;
+  overflow-y: auto;
+  justify-content: space-between;
+}
+
+/* العمود الأوسط: اللوحة + اليد */
+.game-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  flex: 1;
+  /* يمنع الامتداد خارج الحاوية */
+  min-width: 0;
+  overflow-y: auto;
+}
+
+
+/* ══════════════════════════════════════════════════
+   9. اللوحة (Board) والخلايا (Cells)
+   ══════════════════════════════════════════════════ */
+
+/* إطار اللوحة بلون نسيج الطاولة الخضراء */
+.bwrap {
+  background: var(--felt);
+  border: 3px solid var(--fb);
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: 0 6px 28px rgba(0,0,0,.5);
+  /* يتيح التمرير الأفقي على الشاشات الضيقة جداً */
+  overflow: auto;
+  max-width: 100%;
+}
+
+/* شبكة 10×10 للوحة */
+.board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+}
+
+/* خلية واحدة في اللوحة */
+.cell {
+  width: var(--cell-w);
+  height: var(--cell-h);
+  background: #fff;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-weight: 700;
+  color: #222;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border-color .1s;
+}
+
+/* زاوية حرة ★ */
+.cell.corn { background: #263225; cursor: default; }
+
+/* رمز البذرة والرتبة */
+.cell .cs { font-size: .78rem; line-height: 1.1; }
+.cell .cn { font-size: .54rem; line-height: 1; }
+
+/* الألوان الحمراء (كبح + ديناري) */
+.cell.rc { color: #c1121f; }
+
+/* خلفية خفيفة لخلايا الجاك */
+.cell.has-jack-one { background: rgba(193,18,31,.12); }
+.cell.has-jack-two { background: rgba(144,224,239,.12); }
+
+.cell .jack-one-eyed { color: #c1121f; font-weight: 900; }
+.cell .jack-two-eyed { color: #1d4080; font-weight: 900; }
+
+/* تمييز الأماكن المتاحة للعب (Highlights) */
+.cell.hl-m  { border: 2px solid var(--gold) !important;  background: rgba(233,196,106,.18) !important; }
+.cell.hl-w  { border: 2px solid #90e0ef !important;       background: rgba(144,224,239,.14) !important; }
+.cell.hl-r  { border: 2px solid #e63946 !important;       background: rgba(230,57,70,.14) !important; }
+.cell.hl-r4 { border: 3px solid #ff1744 !important;       background: rgba(255,23,68,.26) !important;  box-shadow: 0 0 8px rgba(255,23,68,.5) inset; }
+
+
+/* ══════════════════════════════════════════════════
+   10. الفيشات (Chips)
+   ══════════════════════════════════════════════════ */
+.chip {
+  position: absolute;
+  width: var(--chip-sz);
+  height: var(--chip-sz);
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.38);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  transition: box-shadow .2s;
+}
+
+/* ألوان الفيشات لكل لاعب */
+.chip.c0 { background: radial-gradient(circle at 35% 35%, #74e8a0, #2d6a4f); }
+.chip.c1 { background: radial-gradient(circle at 35% 35%, #f87171, #c1121f); }
+.chip.c2 { background: radial-gradient(circle at 35% 35%, #93c5fd, #1d4080); }
+.chip.c3 { background: radial-gradient(circle at 35% 35%, #c8a8ff, #6b2fa0); }
+.chip.c4 { background: radial-gradient(circle at 35% 35%, #ffd166, #e07b00); }
+.chip.c5 { background: radial-gradient(circle at 35% 35%, #80ffdb, #0d7a5f); }
+
+/* الفيشة المكملة لسيكوينس تتوهج */
+.chip.seq { border: 3px solid var(--gold); box-shadow: 0 0 10px var(--gold); }
+
+
+/* ══════════════════════════════════════════════════
+   11. يد اللاعب (Hand)
+   ══════════════════════════════════════════════════ */
+.ha {
+  width: 100%;
+  max-width: 660px;
+}
+
+.hlbl {
+  font-size: .68rem;
+  color: #888;
+  text-align: center;
+  margin-bottom: .28rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+/* حاوية الأوراق – تمرير أفقي إذا زادت الأوراق */
+.hand {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  overflow-x: auto;
+  padding: .28rem;
+  /* تمرير سلس على الجوال */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ورقة واحدة في اليد */
+.hc {
+  width: var(--card-w);
+  height: var(--card-h);
+  background: #fff;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  font-size: .64rem;
+  font-weight: 700;
+  color: #222;
+  flex-shrink: 0;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
+}
+.hc .cs { font-size: .88rem; }
+.hc.rc  { color: #c1121f; }
+
+/* تمييز أنواع الجاك */
+.hc.jack-one-eyed { color: #ff6666; border-color: #ff6666; background: rgba(255,179,102,.1); }
+.hc.jack-two-eyed { color: #00D4FF; border-color: #00D4FF; background: rgba(0,212,255,.1); }
+
+/* الورقة المحددة تتألق وترتفع للأعلى */
+.hc.sel { border-color: var(--gold); box-shadow: 0 0 12px var(--gold); transform: translateY(-6px); }
+.hc.jack-one-eyed.sel { border-color: #ff6666; box-shadow: 0 0 12px rgba(255,102,102,.6); }
+.hc.jack-two-eyed.sel { border-color: #00D4FF; box-shadow: 0 0 12px rgba(0,212,255,.6); }
+
+/* ورقة الحرق (لا يوجد لها مكان في اللوحة) */
+.hc.burned-option {
+  background: linear-gradient(135deg, #c1121f, #8b0000) !important;
+  color: #fff !important;
+  border: 3px solid #ff1744 !important;
+  position: relative;
+  box-shadow: inset 0 0 15px rgba(0,0,0,.5), 0 0 18px rgba(255,23,68,.7) !important;
+}
+/* أيقونة النار فوق الورقة المحترقة */
+.hc.burned-option::after {
+  content: '🔥';
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  font-size: 1.3rem;
+  animation: flicker .6s infinite;
+}
+.hc.burned-option:hover { transform: scale(1.08) !important; }
+
+
+/* ══════════════════════════════════════════════════
+   12. الكرت الأخير + رسائل الحالة
+   ══════════════════════════════════════════════════ */
+
+/* صف يحتوي رسالة الحالة + الكرت الأخير جنباً لجنب */
+.status-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 6px 0;
+}
+
+#smsg {
+  text-align: center;
+  color: var(--gl);
+  font-weight: 700;
+  font-size: .82rem;
+}
+
+/* مربع عرض الكرت الأخير المُلعب */
+.last-card-box {
+  width: 60px;
+  height: 85px;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 14px rgba(233,196,106,.35);
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #222;
+  min-width: 60px;
+}
+.last-card-box.jack-red   { border-color: #c1121f; box-shadow: 0 0 18px rgba(193,18,31,.6);   background: #ffe0e0; }
+.last-card-box.jack-wild  { border-color: #FFD700; box-shadow: 0 0 18px rgba(255,215,0,.55);  background: #fff9e0; }
+.last-card-box.burned-card {
+  border-color: #ff1744;
+  background: linear-gradient(135deg, #c1121f, #8b0000);
+  color: #fff;
+  animation: burnFlicker .8s ease-in-out infinite;
+}
+.last-card-box .cs { font-size: 1.5rem; margin-bottom: 4px; }
+.last-card-box .cn { font-size: .7rem; }
+
+
+/* ══════════════════════════════════════════════════
+   13. اللوحات الجانبية (Side Panels – تاريخ الكروت)
+   ══════════════════════════════════════════════════ */
+.played-cards-side {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  width: 110px;
+  min-width: 90px;
+  padding: .5rem;
+  background: rgba(0,0,0,.3);
+  border-radius: 8px;
+  align-items: center;
+}
+.played-cards-side.left-side  { border: 2px solid var(--bl); }
+.played-cards-side.right-side { border: 2px solid var(--red); }
+
+.side-label {
+  color: var(--gold);
+  font-weight: bold;
+  font-size: .8rem;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.played-cards-area {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+  align-items: center;
+}
+
+/* كرت واحد في التاريخ الجانبي */
+.played-card {
+  width: 46px;
+  height: 64px;
+  background: #fff;
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #222;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  animation: slideIn .25s ease-out;
+  font-size: .7rem;
+}
+.played-card .suit { font-size: 1.1rem; line-height: 1; }
+.played-card .rank { font-size: .7rem;  line-height: 1; }
+
+
+/* ══════════════════════════════════════════════════
+   14. Overlays
+   ══════════════════════════════════════════════════ */
+
+/* — نافذة الفوز / الخسارة — */
+.mover {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.83);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.mover.show { display: flex; }
+
+.modal {
+  background: var(--cbg);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  padding: 1.8rem;
+  text-align: center;
+  max-width: 310px;
+  width: 90%;
+}
+.modal h2 { font-size: 1.5rem; margin-bottom: .5rem; }
+.modal p  { color: #ccc; margin: .6rem 0 1.2rem; }
+
+/* — شريط "انتظر دور الخصم" — */
+.wover {
+  display: none;
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.92);
+  border: 1px solid var(--bl);
+  border-radius: 11px;
+  padding: .55rem 1.2rem;
+  font-size: .8rem;
+  color: #90e0ef;
+  z-index: 50;
+  align-items: center;
+  gap: .45rem;
+  white-space: nowrap;
+}
+.wover.show { display: flex; }
+
+/* — شاشة قطع الاتصال — */
+#disconnectOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.92);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+  padding: 2rem;
+}
+#disconnectOverlay.show { display: flex; }
+#disconnectOverlay h2  { color: #e63946; font-size: 1.6rem; }
+#disconnectOverlay p   { color: #aaa; }
+
+
+/* ══════════════════════════════════════════════════
+   15. Responsive – Tablet (عرض ≤ 900px)
+      مثال: iPad أو نافذة متوسطة
+   ══════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+
+  /* تصغير الخلية والفيشة قليلاً */
+  :root {
+    --cell-w:  32px;
+    --cell-h:  44px;
+    --chip-sz: 22px;
+  }
+
+  /* إخفاء اللوحات الجانبية لتوفير مساحة اللوحة */
+  .played-cards-side { display: none; }
+
+  /* اللوحة تأخذ العرض الكامل */
+  .gbody { padding: .25rem; gap: .3rem; }
+}
+
+
+/* ══════════════════════════════════════════════════
+   16. Responsive – Mobile (عرض ≤ 600px)
+      مثال: iPhone / Android
+   ══════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* الخلية تتكيف مع عرض الشاشة الفعلي */
+  :root {
+    --cell-w:  clamp(22px, 8.5vw, 30px);
+    --cell-h:  clamp(30px, 11.5vw, 42px);
+    --chip-sz: clamp(15px, 5.5vw, 21px);
+    --card-w:  40px;
+    --card-h:  57px;
+  }
+
+  /* الشعار أصغر */
+  .logo { font-size: 2.2rem; }
+
+  /* الأزرار تملأ العرض بدل التجمع */
+  .brow { flex-direction: column; align-items: stretch; }
+  .btn  { width: 100%; text-align: center; }
+
+  /* هيدر اللعبة يتكيف مع عرض ضيق */
+  .ghdr { padding: .3rem .5rem; gap: .2rem; }
+
+  /* نص السكور أصغر */
+  .sb   { font-size: .63rem; padding: .15rem .4rem; }
+  .ti   { font-size: .63rem; }
+
+  /* رسالة الحالة أصغر */
+  #smsg { font-size: .74rem; }
+
+  /* الكرت الأخير أصغر */
+  .last-card-box { width: 48px; height: 68px; font-size: 1rem; min-width: 48px; }
+  .last-card-box .cs { font-size: 1.1rem; }
+
+  /* نص الخلية أصغر */
+  .cell .cs { font-size: clamp(.45rem, 1.8vw, .7rem); }
+  .cell .cn { font-size: clamp(.38rem, 1.5vw, .54rem); }
+
+  /* يد اللاعب تبدأ من اليسار مع تمرير أفقي */
+  .hand { justify-content: flex-start; padding: .2rem .3rem; }
+  .ha   { max-width: 100%; }
+
+  /* اللوبي يأخذ كامل الشاشة */
+  #lobby { padding: 1rem; max-width: 100%; }
+
+  /* رمز الغرفة أصغر قليلاً */
+  .rcode { font-size: 1.4rem; }
+
+  /* شريط الانتظار قريب من يد اللاعب */
+  .wover { bottom: 3.5rem; font-size: .72rem; padding: .4rem .9rem; }
+}
+
+
+/* ══════════════════════════════════════════════════
+   17. Responsive – Mobile XS (عرض ≤ 380px)
+      مثال: iPhone SE / أجهزة صغيرة جداً
+   ══════════════════════════════════════════════════ */
+@media (max-width: 380px) {
+
+  :root {
+    --cell-w:  clamp(20px, 8vw, 26px);
+    --cell-h:  clamp(28px, 11vw, 37px);
+    --chip-sz: clamp(13px, 5vw, 18px);
+    --card-w:  36px;
+    --card-h:  52px;
+  }
+
+  /* الشعار أصغر */
+  .logo { font-size: 1.8rem; }
+
+  /* إخفاء معاينة الكروت في القائمة لتوفير مساحة */
+  .cprev { display: none; }
+
+  /* هيدر أكثر ضغطاً */
+  .ghdr { padding: .25rem .4rem; }
+  .sb   { font-size: .58rem; padding: .12rem .3rem; }
+
+  /* رمز الغرفة */
+  .rcode { font-size: 1.2rem; letter-spacing: .2em; }
+
+  /* الـ overlay أقل تبطيناً */
+  .modal { padding: 1.2rem; }
+}
